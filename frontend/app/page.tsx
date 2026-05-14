@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createAudioBlob, createAudioUrl, uploadAudio } from "@/lib/api";
 
 export default function HomePage() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [backendMessage, setBackendMessage] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -13,36 +15,40 @@ export default function HomePage() {
   const startRecording = async () => {
     try {
       setErrorMessage("");
+      setBackendMessage("");
       setAudioUrl(null);
 
-      // Ask user for microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
 
-      // Create recorder using the microphone stream
       const mediaRecorder = new MediaRecorder(stream);
+
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      // Store audio chunks as they become available
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
-      // When recording stops, create an audio file URL
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
-        });
+      mediaRecorder.onstop = async () => {
+        const audioBlob = createAudioBlob(audioChunksRef.current);
 
-        const url = URL.createObjectURL(audioBlob);
+        const url = createAudioUrl(audioBlob);
         setAudioUrl(url);
 
-        // Stop microphone access
         stream.getTracks().forEach((track) => track.stop());
+
+        try {
+          const data = await uploadAudio(audioBlob);
+          console.log("Backend Response:", data);
+          setBackendMessage(data.message);
+        } catch (error) {
+          console.error("Upload error:", error);
+          setErrorMessage("Failed to send audio to backend.");
+        }
       };
 
       mediaRecorder.start();
@@ -93,6 +99,10 @@ export default function HomePage() {
 
         {errorMessage && (
           <p className="mt-4 text-red-600 font-medium">{errorMessage}</p>
+        )}
+
+        {backendMessage && (
+          <p className="mt-4 text-green-600 font-medium">{backendMessage}</p>
         )}
 
         {audioUrl && (
