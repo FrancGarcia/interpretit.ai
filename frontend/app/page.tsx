@@ -8,6 +8,7 @@ export default function HomePage() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [backendMessage, setBackendMessage] = useState("");
+  const [transcription, setTranscription] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -45,6 +46,7 @@ export default function HomePage() {
           const data = await uploadAudio(audioBlob);
           console.log("Backend Response:", data);
           setBackendMessage(data.message);
+          setTranscription(data.spanish_transcript || "No transcript available");
         } catch (error) {
           console.error("Upload error:", error);
           setErrorMessage("Failed to send audio to backend.");
@@ -103,6 +105,13 @@ export default function HomePage() {
 
         {backendMessage && (
           <p className="mt-4 text-green-600 font-medium">{backendMessage}</p>
+        )}
+
+        {transcription && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <h2 className="text-lg font-semibold mb-2">Spanish Transcript:</h2>
+            <p className="text-gray-700">{transcription}</p>
+          </div>
         )}
 
         {audioUrl && (
