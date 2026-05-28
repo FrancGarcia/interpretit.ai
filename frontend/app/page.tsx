@@ -16,6 +16,7 @@ const LANGUAGES = [
   { label: "Korean", value: "ko" },
   { label: "Russian", value: "ru" },
   { label: "Tamil", value: "ta" },
+  { label: "Hindi", value: "hi" },
 ];
 
 export default function HomePage() {
@@ -106,7 +107,10 @@ export default function HomePage() {
 
           <select
             value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
+            onChange={(e) => {
+                  console.log("Selected language:", e.target.value);
+                  setSelectedLanguage(e.target.value);
+            }}
             className="text-black w-full border rounded-xl px-4 py-3 text-lg"
           >
             <option value="">Choose language</option>
