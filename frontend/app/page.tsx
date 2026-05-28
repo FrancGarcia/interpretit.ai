@@ -24,7 +24,7 @@ export default function HomePage() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const [transcript, setTranscript] = useState("");
+  const [transcription, setTranscription] = useState("");
   const [interpretation, setInterpretation] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -34,7 +34,7 @@ export default function HomePage() {
     try {
       setErrorMessage("");
       setAudioUrl(null);
-      setTranscript("");
+      setTranscription("");
       setInterpretation("");
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -64,7 +64,7 @@ export default function HomePage() {
 
           console.log("Backend Response:", data);
 
-          setTranscript(data.transcript || "");
+          setTranscription(data.transcription || "");
           setInterpretation(data.interpretation || "");
         } catch (error) {
           console.error("Upload error:", error);
@@ -183,15 +183,15 @@ export default function HomePage() {
           </div>
         )}
 
-        {(transcript || interpretation) && (
+        {(transcription || interpretation) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
             <div className="bg-gray-50 rounded-xl p-6 border">
               <h2 className="text-xl font-bold mb-4 text-red-600">
-                Transcript
+                Transcription
               </h2>
 
               <p className="text-gray-800 whitespace-pre-wrap">
-                {transcript}
+                {transcription}
               </p>
             </div>
 

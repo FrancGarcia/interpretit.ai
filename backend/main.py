@@ -1,9 +1,10 @@
 import os
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
+from language_helpers import interpret_input_language_with_openai
 
 load_dotenv()
 
@@ -28,14 +29,14 @@ def root():
     return {"message": "Backend is running"}
 
 
-def transcribe_audio_with_deepgram(audio_bytes: bytes, content_type: str) -> str:
+def transcribe_audio_with_deepgram(audio_bytes: bytes, content_type: str, input_language: str) -> str:
     if not DEEPGRAM_API_KEY:
         raise HTTPException(status_code=500, detail="Deepgram API key is missing")
 
     deepgram_url = (
         "https://api.deepgram.com/v1/listen"
         "?model=nova-3"
-        "&language=es"
+        f"&language={input_language}" # Update input language to the provided language
         "&smart_format=true"
     )
 
@@ -69,44 +70,22 @@ def transcribe_audio_with_deepgram(audio_bytes: bytes, content_type: str) -> str
     return transcript
 
 
-def interpret_spanish_with_openai(spanish_transcript: str) -> str:
-    if not OPENAI_API_KEY:
-        raise HTTPException(
-            status_code=500,
-            detail="OpenAI API key is missing",
-        )
-
-    if not spanish_transcript.strip():
-        return ""
-
-    response = openai_client.responses.create(
-        model="gpt-4.1-mini",
-        input=(
-            "You are a professional medical interpreter.\n"
-            "Translate the following Spanish patient speech into "
-            "clear concise English for a physician:\n\n"
-            f"{spanish_transcript}"
-        ),
-    )
-
-    return response.output_text
-
-
 @app.post("/interpret")
-async def interpret(audio: UploadFile = File(...)):
+async def interpret(audio: UploadFile = File(...), language: str = Form(...)):
     audio_bytes = await audio.read()
 
-    spanish_transcript = transcribe_audio_with_deepgram(
+    language_transcription = transcribe_audio_with_deepgram(
         audio_bytes=audio_bytes,
         content_type=audio.content_type,
+        input_language=language
     )
 
-    english_interpretation = interpret_spanish_with_openai(spanish_transcript)
+    english_interpretation = interpret_input_language_with_openai(language, language_transcription)
 
     return {
         "filename": audio.filename,
         "content_type": audio.content_type,
-        "spanish_transcript": spanish_transcript,
-        "english_interpretation": english_interpretation,
+        "transcription": language_transcription,
+        "interpretation": english_interpretation,
         "message": "Audio transcribed and interpreted successfully",
     }

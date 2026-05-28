@@ -4,7 +4,7 @@ export type InterpretResponse = {
   filename: string;
   content_type: string;
   message: string;
-  transcript?: string;
+  transcription?: string;
   interpretation?: string;
   source_language?: string;
 };

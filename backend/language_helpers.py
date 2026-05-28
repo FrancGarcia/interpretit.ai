@@ -2,45 +2,35 @@
 Helper functions with prompts for language translation and detection.
 '''
 
-def interpret_spanish_with_openai(spanish_transcript: str) -> str:
+import os
+import requests
+from dotenv import load_dotenv
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
+
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+def interpret_input_language_with_openai(input_language: str, input_transcript: str) -> str:
     if not OPENAI_API_KEY:
         raise HTTPException(
             status_code=500,
             detail="OpenAI API key is missing",
         )
 
-    if not spanish_transcript.strip():
+    if not input_transcript.strip():
         return ""
 
     response = openai_client.responses.create(
         model="gpt-4.1-mini",
         input=(
             "You are a professional medical interpreter.\n"
-            "Translate the following Spanish patient speech into "
+            f"Translate the following {input_language} patient speech into "
             "clear concise English for a physician:\n\n"
-            f"{spanish_transcript}"
-        ),
-    )
-
-    return response.output_text
-
-def interpret_tamil_with_openai(tamil_transcript: str) -> str:
-    if not OPENAI_API_KEY:
-        raise HTTPException(
-            status_code=500,
-            detail="OpenAI API key is missing",
-        )
-
-    if not tamil_transcript.strip():
-        return ""
-
-    response = openai_client.responses.create(
-        model="gpt-4.1-mini",
-        input=(
-            "You are a professional medical interpreter.\n"
-            "Translate the following Tamil patient speech into "
-            "clear concise English for a physician:\n\n"
-            f"{tamil_transcript}"
+            f"{input_transcript}"
         ),
     )
 
