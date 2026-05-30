@@ -32,6 +32,14 @@ export default function HomePage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  const resetSession = () => {
+    setAudioUrl(null);
+    setTranscription("");
+    setInterpretation("");
+    setErrorMessage("");
+    audioChunksRef.current = [];
+  };
+
   const inputLanguageLabel =
     LANGUAGES.find((lang) => lang.value === inputLanguage)?.label ||
     inputLanguage;
@@ -125,7 +133,10 @@ export default function HomePage() {
 
             <select
               value={inputLanguage}
-              onChange={(e) => setInputLanguage(e.target.value)}
+              onChange={(e) => {
+                resetSession();
+                setInputLanguage(e.target.value);
+              }}
               className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
             >
               <option value="">Choose input language</option>
@@ -144,7 +155,10 @@ export default function HomePage() {
 
             <select
               value={outputLanguage}
-              onChange={(e) => setOutputLanguage(e.target.value)}
+              onChange={(e) => {
+                resetSession();
+                setOutputLanguage(e.target.value);
+              }}
               className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
             >
               <option value="">Choose output language</option>
@@ -174,6 +188,7 @@ export default function HomePage() {
             <span className="font-semibold">{outputLanguageLabel}</span>
             <button
               onClick={() => {
+                resetSession();
                 setInputLanguage("");
                 setOutputLanguage("");
               }}
