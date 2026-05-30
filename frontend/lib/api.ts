@@ -11,12 +11,14 @@ export type InterpretResponse = {
 
 export async function uploadAudio(
   audioBlob: Blob,
-  language: string
+  inputLanguage: string,
+  outputLanguage: string
 ): Promise<InterpretResponse> {
   const formData = new FormData();
 
   formData.append("audio", audioBlob, "recording.webm");
-  formData.append("language", language);
+  formData.append("input_language", inputLanguage);
+  formData.append("output_language", outputLanguage);
 
   const response = await fetch(`${API_BASE_URL}/interpret`, {
     method: "POST",

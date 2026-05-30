@@ -20,7 +20,8 @@ const LANGUAGES = [
 ];
 
 export default function HomePage() {
-  const [selectedLanguage, setSelectedLanguage] = useState("");
+  const [inputLanguage, setInputLanguage] = useState("");
+  const [outputLanguage, setOutputLanguage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -30,6 +31,14 @@ export default function HomePage() {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  const inputLanguageLabel =
+    LANGUAGES.find((lang) => lang.value === inputLanguage)?.label ||
+    inputLanguage;
+
+  const outputLanguageLabel =
+    LANGUAGES.find((lang) => lang.value === outputLanguage)?.label ||
+    outputLanguage;
 
   const startRecording = async () => {
     try {
@@ -61,11 +70,15 @@ export default function HomePage() {
         stream.getTracks().forEach((track) => track.stop());
 
         try {
-          const data = await uploadAudio(audioBlob, selectedLanguage);
+          const data = await uploadAudio(
+            audioBlob,
+            inputLanguage,
+            outputLanguage
+          );
 
           console.log("Backend Response:", data);
 
-          setTranscription(data.transcription || "");
+          setTranscription(data.transcription || data.transcription || "");
           setInterpretation(data.interpretation || "");
         } catch (error) {
           console.error("Upload error:", error);
@@ -95,39 +108,57 @@ export default function HomePage() {
     }
   };
 
-  if (!selectedLanguage) {
+  if (!inputLanguage || !outputLanguage) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
         <div className="bg-white shadow-xl rounded-2xl p-10 w-full max-w-md text-center">
           <h1 className="text-4xl font-bold mb-2">interpretit.ai</h1>
 
           <p className="text-gray-500 mb-8">
-            Select the patient&apos;s spoken language
+            Select the input and output languages
           </p>
 
-          <select
-            value={selectedLanguage}
-            onChange={(e) => {
-                  console.log("Selected language:", e.target.value);
-                  setSelectedLanguage(e.target.value);
-            }}
-            className="text-black w-full border rounded-xl px-4 py-3 text-lg"
-          >
-            <option value="">Choose language</option>
-            {LANGUAGES.map((language) => (
-              <option key={language.value} value={language.value}>
-                {language.label}
-              </option>
-            ))}
-          </select>
+          <div className="mb-6 text-left">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Patient&apos;s Spoken Language
+            </label>
+
+            <select
+              value={inputLanguage}
+              onChange={(e) => setInputLanguage(e.target.value)}
+              className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
+            >
+              <option value="">Choose input language</option>
+              {LANGUAGES.map((language) => (
+                <option key={language.value} value={language.value}>
+                  {language.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-6 text-left">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Output Language
+            </label>
+
+            <select
+              value={outputLanguage}
+              onChange={(e) => setOutputLanguage(e.target.value)}
+              className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
+            >
+              <option value="">Choose output language</option>
+              {LANGUAGES.map((language) => (
+                <option key={language.value} value={language.value}>
+                  {language.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </main>
     );
   }
-
-  const selectedLanguageLabel =
-    LANGUAGES.find((lang) => lang.value === selectedLanguage)?.label ||
-    selectedLanguage;
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
@@ -135,16 +166,17 @@ export default function HomePage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-2">interpretit.ai</h1>
 
-          <p className="text-gray-500 mb-2">
-            Medical Speech Interpreter
-          </p>
+          <p className="text-gray-500 mb-2">Medical Speech Interpreter</p>
 
           <p className="text-sm text-gray-500 mb-8">
-            Selected Language:{" "}
-            <span className="font-semibold">{selectedLanguageLabel}</span>
-            {" "}
+            Translating from{" "}
+            <span className="font-semibold">{inputLanguageLabel}</span> to{" "}
+            <span className="font-semibold">{outputLanguageLabel}</span>
             <button
-              onClick={() => setSelectedLanguage("")}
+              onClick={() => {
+                setInputLanguage("");
+                setOutputLanguage("");
+              }}
               className="text-blue-600 underline ml-2"
             >
               Change
@@ -167,7 +199,7 @@ export default function HomePage() {
 
         <p className="mt-6 text-center text-gray-500">
           {isRecording
-            ? `Recording ${selectedLanguageLabel} speech...`
+            ? `Recording ${inputLanguageLabel} speech...`
             : "Press Record to begin"}
         </p>
 
@@ -191,7 +223,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
             <div className="bg-gray-50 rounded-xl p-6 border">
               <h2 className="text-xl font-bold mb-4 text-red-600">
-                Transcription
+                {inputLanguageLabel} Transcription
               </h2>
 
               <p className="text-gray-800 whitespace-pre-wrap">
@@ -201,7 +233,7 @@ export default function HomePage() {
 
             <div className="bg-gray-50 rounded-xl p-6 border">
               <h2 className="text-xl font-bold mb-4 text-blue-600">
-                English Interpretation
+                {outputLanguageLabel} Interpretation
               </h2>
 
               <p className="text-gray-800 whitespace-pre-wrap">

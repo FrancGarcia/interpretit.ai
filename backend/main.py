@@ -6,8 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from language_helpers import interpret_input_language_with_openai
 
-load_dotenv()
-
 app = FastAPI()
 
 app.add_middleware(
@@ -71,21 +69,21 @@ def transcribe_audio_with_deepgram(audio_bytes: bytes, content_type: str, input_
 
 
 @app.post("/interpret")
-async def interpret(audio: UploadFile = File(...), language: str = Form(...)):
+async def interpret(audio: UploadFile = File(...), input_language: str = Form(...), output_language: str = Form(...)):
     audio_bytes = await audio.read()
 
     language_transcription = transcribe_audio_with_deepgram(
         audio_bytes=audio_bytes,
         content_type=audio.content_type,
-        input_language=language
+        input_language=input_language
     )
 
-    english_interpretation = interpret_input_language_with_openai(language, language_transcription)
+    interpretation = interpret_input_language_with_openai(input_language=input_language, input_transcript=language_transcription, output_language=output_language)
 
     return {
         "filename": audio.filename,
         "content_type": audio.content_type,
         "transcription": language_transcription,
-        "interpretation": english_interpretation,
+        "interpretation": interpretation,
         "message": "Audio transcribed and interpreted successfully",
     }
