@@ -94,7 +94,9 @@ export default function HomePage() {
       return;
     }
 
-    resetSession();
+    // resetSession();
+    setErrorMessage("");
+    setAudioUrl(null);
     setScreen("record");
   };
 
@@ -333,7 +335,9 @@ export default function HomePage() {
             {outputUserLabel}
             <button
               onClick={() => {
-                resetSession();
+                // resetSession();
+                setErrorMessage("");
+                setAudioUrl(null);
                 setScreen("setup");
               }}
               className="text-blue-600 underline ml-2"
