@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "interpretit.ai",
   description: "InterpretIt.ai - Real-time Multilingual Interpretation",
+  icons: {
+    icon: "public/interpretit.png"
+  },
 };
 
 export default function RootLayout({
