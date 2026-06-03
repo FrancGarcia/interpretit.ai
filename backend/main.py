@@ -69,7 +69,7 @@ def transcribe_audio_with_deepgram(audio_bytes: bytes, content_type: str, input_
 
 
 @app.post("/interpret")
-async def interpret(audio: UploadFile = File(...), input_language: str = Form(...), output_language: str = Form(...)):
+async def interpret(audio: UploadFile = File(...), input_language: str = Form(...), output_language: str = Form(...), input_user: str = Form(...), output_user: str = Form(...)):
     audio_bytes = await audio.read()
 
     language_transcription = transcribe_audio_with_deepgram(
@@ -78,7 +78,7 @@ async def interpret(audio: UploadFile = File(...), input_language: str = Form(..
         input_language=input_language
     )
 
-    interpretation = interpret_input_language_with_openai(input_language=input_language, input_transcript=language_transcription, output_language=output_language)
+    interpretation = interpret_input_language_with_openai(input_language=input_language, input_transcript=language_transcription, output_language=output_language, input_user=input_user, output_user=output_user)
 
     return {
         "filename": audio.filename,

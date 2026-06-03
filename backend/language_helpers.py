@@ -19,7 +19,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
-def interpret_input_language_with_openai(input_language: str, input_transcript: str, output_language: str) -> str:
+def interpret_input_language_with_openai(input_language: str, input_transcript: str, output_language: str, input_user: str, output_user: str) -> str:
     if not OPENAI_API_KEY:
         raise HTTPException(
             status_code=500,
@@ -33,8 +33,8 @@ def interpret_input_language_with_openai(input_language: str, input_transcript: 
         model="gpt-4.1-mini", # Test different OpenAI models here for future improvements
         input=(
             f"You are a professional medical interpreter that speaks both {input_language} and {output_language}.\n"
-            f"Translate the following {input_language} patient speech into "
-            f"{output_language} for a physician:\n\n"
+            f"Translate the following {input_language} {input_user} speech into "
+            f"{output_language} for a {output_user}:\n\n"
             f"{input_transcript}"
         ),
     )

@@ -12,21 +12,25 @@ export type InterpretResponse = {
 export async function uploadAudio(
   audioBlob: Blob,
   inputLanguage: string,
-  outputLanguage: string
-): Promise<InterpretResponse> {
+  outputLanguage: string,
+  inputUser: string,
+  outputUser: string
+) {
   const formData = new FormData();
 
   formData.append("audio", audioBlob, "recording.webm");
   formData.append("input_language", inputLanguage);
   formData.append("output_language", outputLanguage);
+  formData.append("input_user", inputUser);
+  formData.append("output_user", outputUser);
 
-  const response = await fetch(`${API_BASE_URL}/interpret`, {
+  const response = await fetch("http://localhost:8000/interpret", {
     method: "POST",
     body: formData,
   });
 
   if (!response.ok) {
-    throw new Error("Failed to upload audio to backend");
+    throw new Error("Failed to upload audio");
   }
 
   return response.json();

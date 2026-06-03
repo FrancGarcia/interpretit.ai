@@ -1,11 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import {
-  createAudioBlob,
-  createAudioUrl,
-  uploadAudio,
-} from "@/lib/api";
+import { createAudioBlob, createAudioUrl, uploadAudio } from "@/lib/api";
 
 const LANGUAGES = [
   { label: "Spanish", value: "es" },
@@ -19,26 +15,36 @@ const LANGUAGES = [
   { label: "Hindi", value: "hi" },
 ];
 
+const USERS = [
+  { label: "Patient", value: "patient" },
+  { label: "Physician", value: "physician" },
+];
+
+type Screen = "home" | "setup" | "record";
+type UserType = "patient" | "physician" | "";
+
+type ConversationTurn = {
+  transcription: string;
+  interpretation: string;
+};
+
 export default function HomePage() {
+  const [screen, setScreen] = useState<Screen>("home");
+
+  const [inputUser, setInputUser] = useState<UserType>("");
+  const [outputUser, setOutputUser] = useState<UserType>("");
+
   const [inputLanguage, setInputLanguage] = useState("");
   const [outputLanguage, setOutputLanguage] = useState("");
+
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const [transcription, setTranscription] = useState("");
-  const [interpretation, setInterpretation] = useState("");
+  const [conversation, setConversation] = useState<ConversationTurn[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-
-  const resetSession = () => {
-    setAudioUrl(null);
-    setTranscription("");
-    setInterpretation("");
-    setErrorMessage("");
-    audioChunksRef.current = [];
-  };
 
   const inputLanguageLabel =
     LANGUAGES.find((lang) => lang.value === inputLanguage)?.label ||
@@ -48,12 +54,54 @@ export default function HomePage() {
     LANGUAGES.find((lang) => lang.value === outputLanguage)?.label ||
     outputLanguage;
 
+  const inputUserLabel =
+    USERS.find((user) => user.value === inputUser)?.label || inputUser;
+
+  const outputUserLabel =
+    USERS.find((user) => user.value === outputUser)?.label || outputUser;
+
+  const resetSession = () => {
+    setAudioUrl(null);
+    setErrorMessage("");
+    setConversation([]);
+    audioChunksRef.current = [];
+  };
+
+  const startNewSession = () => {
+    resetSession();
+    setInputUser("");
+    setOutputUser("");
+    setInputLanguage("");
+    setOutputLanguage("");
+    setScreen("setup");
+  };
+
+  const continueToRecording = () => {
+    if (!inputUser || !outputUser || !inputLanguage || !outputLanguage) {
+      setErrorMessage(
+        "Please choose the input user, input language, output user, and output language."
+      );
+      return;
+    }
+
+    if (inputUser === outputUser) {
+      setErrorMessage("Input user and output user must be different.");
+      return;
+    }
+
+    if (inputLanguage === outputLanguage) {
+      setErrorMessage("Input language and output language must be different.");
+      return;
+    }
+
+    resetSession();
+    setScreen("record");
+  };
+
   const startRecording = async () => {
     try {
       setErrorMessage("");
       setAudioUrl(null);
-      setTranscription("");
-      setInterpretation("");
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -81,13 +129,22 @@ export default function HomePage() {
           const data = await uploadAudio(
             audioBlob,
             inputLanguage,
-            outputLanguage
+            outputLanguage,
+            inputUser,
+            outputUser
           );
 
           console.log("Backend Response:", data);
 
-          setTranscription(data.transcription || data.transcription || "");
-          setInterpretation(data.interpretation || "");
+          const newTurn: ConversationTurn = {
+            transcription: data.transcription || "",
+            interpretation: data.interpretation || "",
+          };
+
+          setConversation((previousConversation) => [
+            ...previousConversation,
+            newTurn,
+          ]);
         } catch (error) {
           console.error("Upload error:", error);
           setErrorMessage("Failed to send audio to backend.");
@@ -116,59 +173,144 @@ export default function HomePage() {
     }
   };
 
-  if (!inputLanguage || !outputLanguage) {
+  if (screen === "home") {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
         <div className="bg-white shadow-xl rounded-2xl p-10 w-full max-w-md text-center">
           <h1 className="text-4xl font-bold mb-2">interpretit.ai</h1>
 
           <p className="text-gray-500 mb-8">
-            Select the input and output languages
+            Start an interactive conversation between a patient and physician.
           </p>
 
-          <div className="mb-6 text-left">
-            <label className="block text-gray-700 font-semibold mb-2">
-              Patient&apos;s Spoken Language
-            </label>
+          <button
+            onClick={startNewSession}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-xl font-semibold"
+          >
+            Start New Interactive Session
+          </button>
+        </div>
+      </main>
+    );
+  }
 
-            <select
-              value={inputLanguage}
-              onChange={(e) => {
-                resetSession();
-                setInputLanguage(e.target.value);
-              }}
-              className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
-            >
-              <option value="">Choose input language</option>
-              {LANGUAGES.map((language) => (
-                <option key={language.value} value={language.value}>
-                  {language.label}
-                </option>
-              ))}
-            </select>
+  if (screen === "setup") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+        <div className="bg-white shadow-xl rounded-2xl p-10 w-full max-w-2xl text-center">
+          <h1 className="text-4xl font-bold mb-2">interpretit.ai</h1>
+
+          <p className="text-gray-500 mb-8">
+            Choose who is speaking, who is receiving, and the languages.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div className="bg-gray-50 border rounded-xl p-6">
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">Input</h2>
+
+              <label className="block text-gray-700 font-semibold mb-2">
+                Input User
+              </label>
+
+              <select
+                value={inputUser}
+                onChange={(e) => setInputUser(e.target.value as UserType)}
+                className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg mb-5"
+              >
+                <option value="">Choose input user</option>
+
+                {USERS.map((user) => (
+                  <option key={user.value} value={user.value}>
+                    {user.label}
+                  </option>
+                ))}
+              </select>
+
+              <label className="block text-gray-700 font-semibold mb-2">
+                Input Language
+              </label>
+
+              <select
+                value={inputLanguage}
+                onChange={(e) => setInputLanguage(e.target.value)}
+                className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
+              >
+                <option value="">Choose input language</option>
+
+                {LANGUAGES.map((language) => (
+                  <option
+                    key={language.value}
+                    value={language.value}
+                    disabled={language.value === outputLanguage}
+                  >
+                    {language.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="bg-gray-50 border rounded-xl p-6">
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">Output</h2>
+
+              <label className="block text-gray-700 font-semibold mb-2">
+                Output User
+              </label>
+
+              <select
+                value={outputUser}
+                onChange={(e) => setOutputUser(e.target.value as UserType)}
+                className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg mb-5"
+              >
+                <option value="">Choose output user</option>
+
+                {USERS.map((user) => (
+                  <option key={user.value} value={user.value}>
+                    {user.label}
+                  </option>
+                ))}
+              </select>
+
+              <label className="block text-gray-700 font-semibold mb-2">
+                Output Language
+              </label>
+
+              <select
+                value={outputLanguage}
+                onChange={(e) => setOutputLanguage(e.target.value)}
+                className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
+              >
+                <option value="">Choose output language</option>
+
+                {LANGUAGES.map((language) => (
+                  <option
+                    key={language.value}
+                    value={language.value}
+                    disabled={language.value === inputLanguage}
+                  >
+                    {language.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="mb-6 text-left">
-            <label className="block text-gray-700 font-semibold mb-2">
-              Output Language
-            </label>
+          {errorMessage && (
+            <p className="mt-6 text-red-600 font-medium">{errorMessage}</p>
+          )}
 
-            <select
-              value={outputLanguage}
-              onChange={(e) => {
-                resetSession();
-                setOutputLanguage(e.target.value);
-              }}
-              className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
-            >
-              <option value="">Choose output language</option>
-              {LANGUAGES.map((language) => (
-                <option key={language.value} value={language.value}>
-                  {language.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <button
+            onClick={continueToRecording}
+            className="mt-8 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg font-semibold"
+          >
+            Continue
+          </button>
+
+          <button
+            onClick={() => setScreen("home")}
+            className="block mx-auto mt-4 text-blue-600 underline"
+          >
+            Back
+          </button>
         </div>
       </main>
     );
@@ -180,17 +322,19 @@ export default function HomePage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-2">interpretit.ai</h1>
 
-          <p className="text-gray-500 mb-2">Medical Speech Interpreter</p>
+          <p className="text-gray-500 mb-2">
+            {inputUserLabel} to {outputUserLabel} Session
+          </p>
 
           <p className="text-sm text-gray-500 mb-8">
-            Translating from{" "}
+            Translating {inputUserLabel} speech from{" "}
             <span className="font-semibold">{inputLanguageLabel}</span> to{" "}
-            <span className="font-semibold">{outputLanguageLabel}</span>
+            <span className="font-semibold">{outputLanguageLabel}</span> for the{" "}
+            {outputUserLabel}
             <button
               onClick={() => {
                 resetSession();
-                setInputLanguage("");
-                setOutputLanguage("");
+                setScreen("setup");
               }}
               className="text-blue-600 underline ml-2"
             >
@@ -214,8 +358,8 @@ export default function HomePage() {
 
         <p className="mt-6 text-center text-gray-500">
           {isRecording
-            ? `Recording ${inputLanguageLabel} speech...`
-            : "Press Record to begin"}
+            ? `Recording ${inputUserLabel} speech in ${inputLanguageLabel}...`
+            : "Press Record to add a new conversation turn"}
         </p>
 
         {errorMessage && (
@@ -227,36 +371,49 @@ export default function HomePage() {
         {audioUrl && (
           <div className="mt-8">
             <p className="text-sm text-gray-500 mb-2 text-center">
-              Recorded Audio
+              Last Recorded Audio
             </p>
 
             <audio controls src={audioUrl} className="w-full" />
           </div>
         )}
 
-        {(transcription || interpretation) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
-            <div className="bg-gray-50 rounded-xl p-6 border">
-              <h2 className="text-xl font-bold mb-4 text-red-600">
-                {inputLanguageLabel} Transcription
-              </h2>
+        {conversation.length > 0 && (
+          <div className="mt-10 space-y-6">
+            {conversation.map((turn, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
+                <div className="bg-gray-50 rounded-xl p-6 border">
+                  <h2 className="text-xl font-bold mb-4 text-red-600">
+                    Turn {index + 1}: {inputUserLabel} Transcription
+                  </h2>
 
-              <p className="text-gray-800 whitespace-pre-wrap">
-                {transcription}
-              </p>
-            </div>
+                  <p className="text-gray-800 whitespace-pre-wrap">
+                    {turn.transcription}
+                  </p>
+                </div>
 
-            <div className="bg-gray-50 rounded-xl p-6 border">
-              <h2 className="text-xl font-bold mb-4 text-blue-600">
-                {outputLanguageLabel} Interpretation
-              </h2>
+                <div className="bg-gray-50 rounded-xl p-6 border">
+                  <h2 className="text-xl font-bold mb-4 text-blue-600">
+                    Turn {index + 1}: {outputUserLabel} Interpretation
+                  </h2>
 
-              <p className="text-gray-800 whitespace-pre-wrap">
-                {interpretation}
-              </p>
-            </div>
+                  <p className="text-gray-800 whitespace-pre-wrap">
+                    {turn.interpretation}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
+
+        <div className="flex justify-center mt-10">
+          <button onClick={startNewSession} className="text-blue-600 underline">
+            End Session / Start New Session
+          </button>
+        </div>
       </div>
     </main>
   );
