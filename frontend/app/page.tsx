@@ -94,7 +94,6 @@ export default function HomePage() {
       return;
     }
 
-    // resetSession();
     setErrorMessage("");
     setAudioUrl(null);
     setScreen("record");
@@ -177,11 +176,13 @@ export default function HomePage() {
 
   if (screen === "home") {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-        <div className="bg-white shadow-xl rounded-2xl p-10 w-full max-w-md text-center">
-          <h1 className="text-4xl font-bold mb-2">interpretit.ai</h1>
+      <main className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950 p-6">
+        <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-10 w-full max-w-md text-center border border-gray-200 dark:border-gray-800">
+          <h1 className="text-4xl font-bold mb-2 text-gray-900 dark:text-white">
+            interpretit.ai
+          </h1>
 
-          <p className="text-gray-500 mb-8">
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
             Start an interactive conversation between a patient and physician.
           </p>
 
@@ -198,26 +199,30 @@ export default function HomePage() {
 
   if (screen === "setup") {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-        <div className="bg-white shadow-xl rounded-2xl p-10 w-full max-w-2xl text-center">
-          <h1 className="text-4xl font-bold mb-2">interpretit.ai</h1>
+      <main className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950 p-6">
+        <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-10 w-full max-w-2xl text-center border border-gray-200 dark:border-gray-800">
+          <h1 className="text-4xl font-bold mb-2 text-gray-900 dark:text-white">
+            interpretit.ai
+          </h1>
 
-          <p className="text-gray-500 mb-8">
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
             Choose who is speaking, who is receiving, and the languages.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-            <div className="bg-gray-50 border rounded-xl p-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-800">Input</h2>
+            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+              <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">
+                Input
+              </h2>
 
-              <label className="block text-gray-700 font-semibold mb-2">
+              <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
                 Input User
               </label>
 
               <select
                 value={inputUser}
                 onChange={(e) => setInputUser(e.target.value as UserType)}
-                className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg mb-5"
+                className="text-black dark:text-white bg-white dark:bg-gray-900 w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-lg mb-5"
               >
                 <option value="">Choose input user</option>
 
@@ -228,14 +233,14 @@ export default function HomePage() {
                 ))}
               </select>
 
-              <label className="block text-gray-700 font-semibold mb-2">
+              <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
                 Input Language
               </label>
 
               <select
                 value={inputLanguage}
                 onChange={(e) => setInputLanguage(e.target.value)}
-                className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
+                className="text-black dark:text-white bg-white dark:bg-gray-900 w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-lg"
               >
                 <option value="">Choose input language</option>
 
@@ -251,17 +256,19 @@ export default function HomePage() {
               </select>
             </div>
 
-            <div className="bg-gray-50 border rounded-xl p-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-800">Output</h2>
+            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+              <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">
+                Output
+              </h2>
 
-              <label className="block text-gray-700 font-semibold mb-2">
+              <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
                 Output User
               </label>
 
               <select
                 value={outputUser}
                 onChange={(e) => setOutputUser(e.target.value as UserType)}
-                className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg mb-5"
+                className="text-black dark:text-white bg-white dark:bg-gray-900 w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-lg mb-5"
               >
                 <option value="">Choose output user</option>
 
@@ -272,14 +279,14 @@ export default function HomePage() {
                 ))}
               </select>
 
-              <label className="block text-gray-700 font-semibold mb-2">
+              <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
                 Output Language
               </label>
 
               <select
                 value={outputLanguage}
                 onChange={(e) => setOutputLanguage(e.target.value)}
-                className="text-black bg-white w-full border rounded-xl px-4 py-3 text-lg"
+                className="text-black dark:text-white bg-white dark:bg-gray-900 w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-lg"
               >
                 <option value="">Choose output language</option>
 
@@ -297,7 +304,9 @@ export default function HomePage() {
           </div>
 
           {errorMessage && (
-            <p className="mt-6 text-red-600 font-medium">{errorMessage}</p>
+            <p className="mt-6 text-red-600 dark:text-red-400 font-medium">
+              {errorMessage}
+            </p>
           )}
 
           <button
@@ -309,7 +318,7 @@ export default function HomePage() {
 
           <button
             onClick={() => setScreen("home")}
-            className="block mx-auto mt-4 text-blue-600 underline"
+            className="block mx-auto mt-4 text-blue-600 dark:text-blue-400 underline"
           >
             Back
           </button>
@@ -319,28 +328,34 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <div className="bg-white shadow-xl rounded-2xl p-10 w-full max-w-5xl">
+    <main className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950 p-6">
+      <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-10 w-full max-w-5xl border border-gray-200 dark:border-gray-800">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-2">interpretit.ai</h1>
+          <h1 className="text-4xl font-bold mb-2 text-gray-900 dark:text-white">
+            interpretit.ai
+          </h1>
 
-          <p className="text-gray-500 mb-2">
+          <p className="text-gray-500 dark:text-gray-400 mb-2">
             {inputUserLabel} to {outputUserLabel} Session
           </p>
 
-          <p className="text-sm text-gray-500 mb-8">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
             Translating {inputUserLabel} speech from{" "}
-            <span className="font-semibold">{inputLanguageLabel}</span> to{" "}
-            <span className="font-semibold">{outputLanguageLabel}</span> for the{" "}
-            {outputUserLabel}
+            <span className="font-bold text-gray-800 dark:text-gray-200">
+              {inputLanguageLabel}
+            </span>{" "}
+            to{" "}
+            <span className="font-bold text-gray-800 dark:text-gray-200">
+              {outputLanguageLabel}
+            </span>{" "}
+            for the {outputUserLabel}
             <button
               onClick={() => {
-                // resetSession();
                 setErrorMessage("");
                 setAudioUrl(null);
                 setScreen("setup");
               }}
-              className="text-blue-600 underline ml-2"
+              className="text-blue-600 dark:text-blue-400 underline ml-2"
             >
               Change
             </button>
@@ -360,21 +375,21 @@ export default function HomePage() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-gray-500">
+        <p className="mt-6 text-center text-gray-500 dark:text-gray-400">
           {isRecording
             ? `Recording ${inputUserLabel} speech in ${inputLanguageLabel}...`
             : "Press Record to add a new conversation turn"}
         </p>
 
         {errorMessage && (
-          <p className="mt-4 text-center text-red-600 font-medium">
+          <p className="mt-4 text-center text-red-600 dark:text-red-400 font-medium">
             {errorMessage}
           </p>
         )}
 
         {audioUrl && (
           <div className="mt-8">
-            <p className="text-sm text-gray-500 mb-2 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 text-center">
               Last Recorded Audio
             </p>
 
@@ -389,22 +404,22 @@ export default function HomePage() {
                 key={index}
                 className="grid grid-cols-1 md:grid-cols-2 gap-6"
               >
-                <div className="bg-gray-50 rounded-xl p-6 border">
-                  <h2 className="text-xl font-bold mb-4 text-red-600">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-bold mb-4 text-red-600 dark:text-red-400">
                     Turn {index + 1}: {inputUserLabel} Transcription
                   </h2>
 
-                  <p className="text-gray-800 whitespace-pre-wrap">
+                  <p className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
                     {turn.transcription}
                   </p>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-6 border">
-                  <h2 className="text-xl font-bold mb-4 text-blue-600">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">
                     Turn {index + 1}: {outputUserLabel} Interpretation
                   </h2>
 
-                  <p className="text-gray-800 whitespace-pre-wrap">
+                  <p className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
                     {turn.interpretation}
                   </p>
                 </div>
@@ -414,7 +429,10 @@ export default function HomePage() {
         )}
 
         <div className="flex justify-center mt-10">
-          <button onClick={startNewSession} className="text-blue-600 underline">
+          <button
+            onClick={startNewSession}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
             End Session / Start New Session
           </button>
         </div>
