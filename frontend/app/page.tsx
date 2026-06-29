@@ -24,13 +24,18 @@ type Screen = "home" | "setup" | "record";
 type UserType = "patient" | "physician" | "";
 
 type ConversationTurn = {
+  input_user: string;
+  output_user: string;
   transcription: string;
   interpretation: string;
+  input_language: string;
+  output_language: string;
 };
 
 export default function HomePage() {
   const [screen, setScreen] = useState<Screen>("home");
 
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [inputUser, setInputUser] = useState<UserType>("");
   const [outputUser, setOutputUser] = useState<UserType>("");
 
@@ -38,13 +43,18 @@ export default function HomePage() {
   const [outputLanguage, setOutputLanguage] = useState("");
 
   const [isRecording, setIsRecording] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
 
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
   const inputLanguageLabel =
     LANGUAGES.find((lang) => lang.value === inputLanguage)?.label ||
@@ -61,8 +71,10 @@ export default function HomePage() {
     USERS.find((user) => user.value === outputUser)?.label || outputUser;
 
   const resetSession = () => {
+    setSessionId(crypto.randomUUID());
     setAudioUrl(null);
     setErrorMessage("");
+    setSaveMessage("");
     setConversation([]);
     audioChunksRef.current = [];
   };
@@ -95,13 +107,50 @@ export default function HomePage() {
     }
 
     setErrorMessage("");
+    setSaveMessage("");
     setAudioUrl(null);
     setScreen("record");
+  };
+
+  const saveSession = async () => {
+    if (conversation.length === 0) {
+      setErrorMessage("There are no conversation turns to save.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setErrorMessage("");
+      setSaveMessage("");
+
+      const response = await fetch(`${backendUrl}/sessions/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          turns: conversation,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save session.");
+      }
+
+      setSaveMessage("Session saved successfully.");
+    } catch (error) {
+      console.error("Save session error:", error);
+      setErrorMessage("Failed to save session to MongoDB.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const startRecording = async () => {
     try {
       setErrorMessage("");
+      setSaveMessage("");
       setAudioUrl(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -135,11 +184,13 @@ export default function HomePage() {
             outputUser
           );
 
-          console.log("Backend Response:", data);
-
           const newTurn: ConversationTurn = {
+            input_user: inputUser,
+            output_user: outputUser,
             transcription: data.transcription || "",
             interpretation: data.interpretation || "",
+            input_language: inputLanguage,
+            output_language: outputLanguage,
           };
 
           setConversation((previousConversation) => [
@@ -225,9 +276,12 @@ export default function HomePage() {
                 className="text-black dark:text-white bg-white dark:bg-gray-900 w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-lg mb-5"
               >
                 <option value="">Choose input user</option>
-
                 {USERS.map((user) => (
-                  <option key={user.value} value={user.value}>
+                  <option
+                    key={user.value}
+                    value={user.value}
+                    disabled={user.value === outputUser}
+                  >
                     {user.label}
                   </option>
                 ))}
@@ -243,7 +297,6 @@ export default function HomePage() {
                 className="text-black dark:text-white bg-white dark:bg-gray-900 w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-lg"
               >
                 <option value="">Choose input language</option>
-
                 {LANGUAGES.map((language) => (
                   <option
                     key={language.value}
@@ -271,9 +324,12 @@ export default function HomePage() {
                 className="text-black dark:text-white bg-white dark:bg-gray-900 w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-lg mb-5"
               >
                 <option value="">Choose output user</option>
-
                 {USERS.map((user) => (
-                  <option key={user.value} value={user.value}>
+                  <option
+                    key={user.value}
+                    value={user.value}
+                    disabled={user.value === inputUser}
+                  >
                     {user.label}
                   </option>
                 ))}
@@ -289,7 +345,6 @@ export default function HomePage() {
                 className="text-black dark:text-white bg-white dark:bg-gray-900 w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-lg"
               >
                 <option value="">Choose output language</option>
-
                 {LANGUAGES.map((language) => (
                   <option
                     key={language.value}
@@ -352,6 +407,7 @@ export default function HomePage() {
             <button
               onClick={() => {
                 setErrorMessage("");
+                setSaveMessage("");
                 setAudioUrl(null);
                 setScreen("setup");
               }}
@@ -362,7 +418,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-4 flex-wrap">
           <button
             onClick={handleRecording}
             className={`px-10 py-4 rounded-xl text-white text-xl font-semibold transition duration-200 ${
@@ -372,6 +428,14 @@ export default function HomePage() {
             }`}
           >
             {isRecording ? "Stop" : "Record"}
+          </button>
+
+          <button
+            onClick={saveSession}
+            disabled={conversation.length === 0 || isSaving}
+            className="px-10 py-4 rounded-xl text-white text-xl font-semibold bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {isSaving ? "Saving..." : "Save Session"}
           </button>
         </div>
 
@@ -387,12 +451,17 @@ export default function HomePage() {
           </p>
         )}
 
+        {saveMessage && (
+          <p className="mt-4 text-center text-green-600 dark:text-green-400 font-medium">
+            {saveMessage}
+          </p>
+        )}
+
         {audioUrl && (
           <div className="mt-8">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 text-center">
               Last Recorded Audio
             </p>
-
             <audio controls src={audioUrl} className="w-full" />
           </div>
         )}
@@ -400,15 +469,11 @@ export default function HomePage() {
         {conversation.length > 0 && (
           <div className="mt-10 space-y-6">
             {conversation.map((turn, index) => (
-              <div
-                key={index}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6"
-              >
+              <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
                   <h2 className="text-xl font-bold mb-4 text-red-600 dark:text-red-400">
-                    Turn {index + 1}: {inputUserLabel} Transcription
+                    Turn {index + 1}: {turn.input_user} Transcription
                   </h2>
-
                   <p className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
                     {turn.transcription}
                   </p>
@@ -416,9 +481,8 @@ export default function HomePage() {
 
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
                   <h2 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">
-                    Turn {index + 1}: {outputUserLabel} Interpretation
+                    Turn {index + 1}: {turn.output_user} Interpretation
                   </h2>
-
                   <p className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
                     {turn.interpretation}
                   </p>

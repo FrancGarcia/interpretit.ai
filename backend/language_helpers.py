@@ -40,3 +40,43 @@ def interpret_input_language_with_openai(input_language: str, input_transcript: 
     )
 
     return response.output_text
+
+def transcribe_audio_with_deepgram(audio_bytes: bytes, content_type: str, input_language: str) -> str:
+    if not DEEPGRAM_API_KEY:
+        raise HTTPException(status_code=500, detail="Deepgram API key is missing")
+
+    deepgram_url = (
+        "https://api.deepgram.com/v1/listen"
+        "?model=nova-3"
+        f"&language={input_language}" # Update input language to the provided language
+        "&smart_format=true"
+    )
+
+    headers = {
+        "Authorization": f"Token {DEEPGRAM_API_KEY}",
+        "Content-Type": content_type or "audio/webm",
+    }
+
+    response = requests.post(
+        deepgram_url,
+        headers=headers,
+        data=audio_bytes,
+    )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+
+    deepgram_data = response.json()
+
+    transcript = (
+        deepgram_data
+        .get("results", {})
+        .get("channels", [{}])[0]
+        .get("alternatives", [{}])[0]
+        .get("transcript", "")
+    )
+
+    return transcript
