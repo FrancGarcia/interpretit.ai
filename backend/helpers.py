@@ -1,23 +1,35 @@
 '''
-Helper functions with prompts for language translation and detection.
+Helper functions for:
+    1. Transcribing audio using Deepgram API
+    2. Interpreting transcriptions using OpenAI API
+    3. Managing session data in MongoDB (CRUD operations)
 '''
 
 import os
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException
 from openai import OpenAI
+from typing import List
+from pydantic import BaseModel
+from openai import OpenAI
+from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()
 
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# print(f"Loaded Deepgram API Key: {'Yes' if DEEPGRAM_API_KEY else 'No'}")
-# print(f"Loaded OpenAI API Key: {'Yes' if OPENAI_API_KEY else 'No'}")
-
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+MONGODB_URI = os.getenv("MONGODB_URI")
+MONGODB_DB = os.getenv("MONGODB_DB", "interpretit") 
+
+if not MONGODB_URI:
+    raise RuntimeError("MongoDB URI is missing in environment variables")
+
+mongo_client = AsyncIOMotorClient(MONGODB_URI)
+db = mongo_client[MONGODB_DB]
+sessions_collection = db["sessions"]
 
 def interpret_input_language_with_openai(input_language: str, input_transcript: str, output_language: str, input_user: str, output_user: str) -> str:
     if not OPENAI_API_KEY:
@@ -80,3 +92,33 @@ def transcribe_audio_with_deepgram(audio_bytes: bytes, content_type: str, input_
     )
 
     return transcript
+
+class ConversationTurn(BaseModel):
+    input_user: str
+    output_user: str
+    transcription: str
+    interpretation: str
+    input_language: str
+    output_language: str
+
+class SaveSessionRequest(BaseModel):
+    session_id: str
+    turns: List[ConversationTurn]
+
+def build_session_text(turns: List[ConversationTurn]) -> str:
+    lines = []
+
+    for turn in turns:
+        input_user = turn.input_user.lower()
+        output_user = turn.output_user.lower()
+
+        lines.append(
+            f"{input_user} transcription: '{turn.transcription}'"
+        )
+        lines.append("")
+        lines.append(
+            f"{output_user} interpretation: '{turn.interpretation}'"
+        )
+        lines.append("")
+
+    return "\n".join(lines)
