@@ -8,6 +8,15 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 import helpers as helpers
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
 
 app.add_middleware(
@@ -46,11 +55,11 @@ async def interpret(audio: UploadFile = File(...), input_language: str = Form(..
 async def startup_db():
     try:
         await helpers.mongo_client.admin.command("ping")
-        print("Successfully connected to MongoDB")
-        print("Database:", helpers.db.name)
+        logger.info("Successfully connected to MongoDB")
+        logger.info("Database: %s", helpers.db.name)
     except Exception as e:
-        print("MongoDB connection failed")
-        print(e)
+        logger.error("MongoDB connection failed")
+        logger.error(e)
 
 @app.get("/sessions/get_patients")
 async def get_patients():
@@ -78,9 +87,9 @@ async def save_session(payload: helpers.SaveSessionRequest):
 
     result = await helpers.patient_sessions_collection.insert_one(session_doc)
 
-    print("Inserted ID:", result.inserted_id)
-    print("Database:", helpers.db.name)
-    print("Collection:", helpers.patient_sessions_collection.name)
+    logger.info("Inserted ID: %s", result.inserted_id)
+    logger.info("Database: %s", helpers.db.name)
+    logger.info("Collection: %s", helpers.patient_sessions_collection.name)
 
     return {
         "message": "Session saved successfully",
@@ -88,3 +97,11 @@ async def save_session(payload: helpers.SaveSessionRequest):
         "inserted_id": str(result.inserted_id),
         "session_text": session_text,
     }
+
+@app.delete("/sessions/delete/{session_id}")
+async def delete_session(session_id: str):
+    result = await helpers.patient_sessions_collection.delete_one({"session_id": session_id})
+    
+    logger.info("Deleted ID: %s", result.deleted_count)
+    logger.info("Database: %s", helpers.db.name)
+    logger.info("Collection: %s", helpers.patient_sessions_collection.name)

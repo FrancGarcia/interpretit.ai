@@ -146,6 +146,26 @@ export default function HomePage() {
     setPatients(data);
   };
 
+  const deletePatient = async (sessionId: string) => {
+    try {
+      const response = await fetch(`${backendUrl}/sessions/delete/${sessionId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete patient");
+      }
+
+      setPatients((prevPatients) =>
+        prevPatients.filter((patient) => patient.session_id !== sessionId)
+      );
+
+    } catch (error) {
+      console.error("Delete patient error:", error);
+      setErrorMessage("Failed to delete patient.");
+    }
+  };
+
   const saveSession = async () => {
     if (conversation.length === 0) {
       setErrorMessage("There are no conversation turns to save.");
@@ -543,7 +563,7 @@ export default function HomePage() {
                   onClick={async () => {
                     // Call backend here
                     // await deletePatient(selectedPatient._id);
-
+                    deletePatient(selectedPatient.session_id);
                     setShowDeleteModel(false);
                     setScreen("patients");
                   }}
