@@ -50,6 +50,7 @@ export default function HomePage() {
   const [patients, setPatients] = useState<any[]>([]);
   const [isLoadingPatients, setIsLoadingPatients] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
+  const [patientSearch, setPatientSearch] = useState("");
 
   const [saveMessage, setSaveMessage] = useState("");
 
@@ -425,6 +426,13 @@ export default function HomePage() {
   }
 
   if (screen === "patients") {
+
+    const filteredPatients = patients.filter((patient) =>
+      patient.session_id
+        ?.toLowerCase()
+        .includes(patientSearch.toLowerCase())
+    );
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950 p-6">
       <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-10 w-full max-w-5xl border border-gray-200 dark:border-gray-800">
@@ -436,13 +444,21 @@ export default function HomePage() {
           List of patients loaded from MongoDB.
         </p>
 
+        <input
+          type="text"
+          value={patientSearch}
+          onChange={(e) => setPatientSearch(e.target.value)}
+          placeholder="Search patients..."
+          className="w-full mb-4 px-5 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
         <div className="max-h-[500px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-200 dark:divide-gray-700">
-          {patients.length === 0 ? (
+          {filteredPatients.length === 0 ? (
             <p className="p-6 text-gray-500 dark:text-gray-400">
               No patients found.
             </p>
           ) : (
-            patients.map((patient) => (
+            filteredPatients.map((patient) => (
               <button
                 key={patient._id}
                 onClick={() => {
