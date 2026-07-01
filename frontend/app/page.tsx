@@ -20,7 +20,7 @@ const USERS = [
   { label: "Physician", value: "physician" },
 ];
 
-type Screen = "home" | "setup" | "record";
+type Screen = "home" | "setup" | "record" | "patients" | "patientInfo";
 type UserType = "patient" | "physician" | "";
 
 type ConversationTurn = {
@@ -46,6 +46,11 @@ export default function HomePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [patients, setPatients] = useState<any[]>([]);
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
+
   const [saveMessage, setSaveMessage] = useState("");
 
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
@@ -88,6 +93,20 @@ export default function HomePage() {
     setScreen("setup");
   };
 
+  const loadPatients = async () => {
+    try {
+      setIsLoadingPatients(true);
+      setErrorMessage("");
+      await getPatients();
+      setScreen("patients");
+    } catch (error) {
+      console.error("Load patients error:", error);
+      setErrorMessage("Failed to load patients.");
+    } finally {
+      setIsLoadingPatients(false);
+    }
+  };
+
   const continueToRecording = () => {
     if (!inputUser || !outputUser || !inputLanguage || !outputLanguage) {
       setErrorMessage(
@@ -110,6 +129,19 @@ export default function HomePage() {
     setSaveMessage("");
     setAudioUrl(null);
     setScreen("record");
+  };
+
+  const getPatients = async () => {
+    const response = await fetch(`${backendUrl}/sessions/get_patients`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch patients");
+    }
+
+    const data = await response.json();
+    setPatients(data);
   };
 
   const saveSession = async () => {
@@ -237,12 +269,22 @@ export default function HomePage() {
             Start an interactive conversation between a patient and physician.
           </p>
 
-          <button
-            onClick={startNewSession}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-xl font-semibold"
-          >
-            Start New Interactive Session
-          </button>
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={startNewSession}
+              className="w-full min-h-[56px] bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl text-xl font-semibold"
+            >
+              New Session
+            </button>
+
+            <button
+              onClick={loadPatients}
+              disabled={isLoadingPatients}
+              className="w-full min-h-[56px] bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-4 rounded-xl text-xl font-semibold"
+            >
+              {isLoadingPatients ? "Loading Patients..." : "Load Patients"}
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -377,6 +419,80 @@ export default function HomePage() {
           >
             Back
           </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (screen === "patients") {
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950 p-6">
+      <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-10 w-full max-w-5xl border border-gray-200 dark:border-gray-800">
+        <h1 className="text-4xl font-bold mb-2 text-gray-900 dark:text-white">
+          Patients
+        </h1>
+
+        <p className="text-gray-500 dark:text-gray-400 mb-8">
+          List of patients loaded from MongoDB.
+        </p>
+
+        <div className="max-h-[500px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl divide-y divide-gray-200 dark:divide-gray-700">
+          {patients.length === 0 ? (
+            <p className="p-6 text-gray-500 dark:text-gray-400">
+              No patients found.
+            </p>
+          ) : (
+            patients.map((patient) => (
+              <button
+                key={patient._id}
+                onClick={() => {
+                  setSelectedPatient(patient);
+                  setScreen("patientInfo");
+                }}
+                className="w-full text-left px-6 py-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {patient.session_id}
+                </p>
+              </button>
+            ))
+          )}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={() => setScreen("home")}
+            className="w-64 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-lg font-semibold transition"
+          >
+            Back to Home
+          </button>
+        </div>
+
+      </div>
+    </main>
+  );
+}
+
+  if (screen === "patientInfo" && selectedPatient) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950 p-6">
+        <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-10 w-full max-w-5xl border border-gray-200 dark:border-gray-800">
+          <h1 className="text-4xl font-bold mb-6 text-gray-900 dark:text-white">
+            {selectedPatient.session_id} - Patient Information
+          </h1>
+
+          <pre className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-6 rounded-xl overflow-x-auto">
+            {JSON.stringify(selectedPatient, null, 2)}
+          </pre>
+
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => setScreen("patients")}
+              className="w-64 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg font-semibold"
+            >
+              Back to Patients
+            </button>
+          </div>
         </div>
       </main>
     );

@@ -6,7 +6,7 @@ Provides endpoints for audio transcription, interpretation, and session manageme
 from datetime import datetime
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-import backend.helpers as helpers
+import helpers as helpers
 
 app = FastAPI()
 
@@ -52,6 +52,15 @@ async def startup_db():
         print("MongoDB connection failed")
         print(e)
 
+@app.get("/sessions/get_patients")
+async def get_patients():
+    all_patients = []
+    async for patient in helpers.patient_sessions_collection.find():
+        all_patients.append(patient)
+    for patient in all_patients:
+        patient["_id"] = str(patient["_id"])  # Convert ObjectId to string for JSON serialization
+    return all_patients
+
 @app.post("/sessions/save")
 async def save_session(payload: helpers.SaveSessionRequest):
     if not payload.turns:
@@ -67,11 +76,11 @@ async def save_session(payload: helpers.SaveSessionRequest):
         "session_text": session_text,
     }
 
-    result = await helpers.sessions_collection.insert_one(session_doc)
+    result = await helpers.patient_sessions_collection.insert_one(session_doc)
 
     print("Inserted ID:", result.inserted_id)
     print("Database:", helpers.db.name)
-    print("Collection:", helpers.sessions_collection.name)
+    print("Collection:", helpers.patient_sessions_collection.name)
 
     return {
         "message": "Session saved successfully",

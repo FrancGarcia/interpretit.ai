@@ -29,7 +29,7 @@ if not MONGODB_URI:
 
 mongo_client = AsyncIOMotorClient(MONGODB_URI)
 db = mongo_client[MONGODB_DB]
-sessions_collection = db["sessions"]
+patient_sessions_collection = db["sessions"]
 
 def interpret_input_language_with_openai(input_language: str, input_transcript: str, output_language: str, input_user: str, output_user: str) -> str:
     if not OPENAI_API_KEY:
