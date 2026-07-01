@@ -51,6 +51,7 @@ export default function HomePage() {
   const [isLoadingPatients, setIsLoadingPatients] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
   const [patientSearch, setPatientSearch] = useState("");
+  const [showDeleteModel, setShowDeleteModel] = useState(false);
 
   const [saveMessage, setSaveMessage] = useState("");
 
@@ -501,15 +502,59 @@ export default function HomePage() {
             {JSON.stringify(selectedPatient, null, 2)}
           </pre>
 
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex justify-center gap-3">
             <button
               onClick={() => setScreen("patients")}
               className="w-64 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg font-semibold"
             >
               Back to Patients
             </button>
+
+            <button
+              onClick={() => setShowDeleteModel(true)}
+              className="w-64 bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl text-lg font-semibold"
+            >
+              Delete Patient
+            </button>
           </div>
         </div>
+
+        {showDeleteModel && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Delete Patient?
+              </h2>
+
+              <p className="mt-3 text-gray-600 dark:text-gray-300">
+                Are you sure you want to permanently delete this patient?
+                This action cannot be undone.
+              </p>
+
+              <div className="mt-8 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteModel(false)}
+                  className="px-5 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-900"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={async () => {
+                    // Call backend here
+                    // await deletePatient(selectedPatient._id);
+
+                    setShowDeleteModel(false);
+                    setScreen("patients");
+                  }}
+                  className="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     );
   }
